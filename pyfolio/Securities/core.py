@@ -12,11 +12,13 @@ from pyfolio.core.Ticker import Ticker
 
 from datetime import datetime,timedelta
 import numpy as np
+import os
 
 #%% Templates for default inputs
     
 BASE_TEMPLATE = { # template for all things
     'name':None, # name for object
+    'currency':'USD',
     'category':None, # category or list of categories to filter by
     'risk':None, # risk level (0-1) with 1 being SUPER HIGH RISK
     'tax_status':None # None/'regular'|'exempt'/'roth'|'deferred'
@@ -50,9 +52,17 @@ class Security(FolioDict):
         kwargs_out.update(ticker=ticker,**kwargs)
         super().__init__(**kwargs_out) # initalize the dict
         # Try and get ticker if its a thing
-        self._ticker = None #yfinance ticker object
-        if get_ticker:
+        self._ticker = None #yfinance ticker object            
+        if get_ticker and  ticker is not None and ticker.lower()!='cash':
             self._update_ticker()
+        # verify the configuration
+        self._verify()
+            
+    def _verify(self):
+        '''@brief verify we have things we need'''
+        # verify we have a count
+        count = self.get('count',None)
+        if count is None: raise Exception("Name:{}, Ticker:{}, has invalid 'count' {}".format(self['name'],self['ticker'],count))
         
     def _update_ticker(self):
         '''@brief get ticker info with yfinance and set to self._ticker'''
@@ -61,6 +71,7 @@ class Security(FolioDict):
         
     def get_value(self,**kwargs):
         '''@brief return the current value of the security'''
+        self._verify()
         if self._ticker is not None: # if its a ticker
             tval = np.asarray(self._ticker.get_value(**kwargs))
         else: # otherwise use whatever self['value'] is set to
@@ -77,9 +88,11 @@ class SecurityGroup(FolioDict):
     '''
     def __init__(self,children=[],tax_status=None,**kwargs):
         '''@brief constructor'''
-        super().__init__()
-        self['children'] = children 
-        self['tax_status'] = tax_status
+        super().__init__(children=children,tax_status=tax_status,**kwargs)
+        # try to load from file if str is provided
+        if isinstance(children,str): 
+            data = FolioDict(); data.load(children)
+            self.update(**data)
         
     def get_value(self,**kwargs):
         '''@brief get value of all securities'''

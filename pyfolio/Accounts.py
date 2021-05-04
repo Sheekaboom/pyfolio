@@ -7,7 +7,12 @@
 @author: aweis
 """
 
-from pyfolio.Securities import SecurityGroup
+from pyfolio.Securities.core import SecurityGroup,Security
 
 class Account(SecurityGroup):
-    pass
+    '''@brief class to hold account info'''
+    def __init__(self,*args,**kwargs):
+        '''@brief constructor'''
+        super().__init__(*args,**kwargs)
+        # assume all children are securities
+        self['children'] = [Security(**c) for c in self['children']]

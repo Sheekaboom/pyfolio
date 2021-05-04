@@ -7,18 +7,31 @@
 @author: aweiss
 """
 
-from pyfolio.Securities import SecurityGroup
-
-PORTFOLIO_TEMPLATE = {
-    "currency":"USD",
-    "total_funds":0
-    "securities":
-    }
+from pyfolio.Securities.core import SecurityGroup
+from pyfolio.Accounts import Account
     
-class Porfolio(SecurityGroup):
+#%% Class to hold a full portfolio (list of accounts)
+class Portfolio(SecurityGroup):
     '''@brief a grouping of accounts'''
-    pass 
-    
-    
+    def __init__(self,*args,**kwargs):
+        '''@brief constructor'''
+        super().__init__(*args,**kwargs)
+        # assume all children are securities
+        self['children'] = [Account(**c) for c in self['children']]
 
+
+#%% Some testing
+
+if __name__=='__main__':
+    
+    from pyfolio.core import FolioDict
+    
+    test_folio = '../examples/example_portfolio.json'
+    
+    myfolio = Portfolio(test_folio)
+    val = myfolio.get_value()
+    
+    fd = FolioDict()
+    fd.load(test_folio)
+    
 
