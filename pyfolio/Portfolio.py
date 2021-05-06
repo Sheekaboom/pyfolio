@@ -17,7 +17,7 @@ class Portfolio(SecurityGroup):
         '''@brief constructor'''
         super().__init__(*args,**kwargs)
         # assume all children are securities
-        self['children'] = [Account(**c) for c in self['children']]
+        self['children'] = {cid:Account(**cv) for cid,cv in self['children'].items()}
 
 
 #%% Some testing

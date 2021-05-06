@@ -2,17 +2,19 @@
 """
 @date Tue May  4 11:54:25 2021
 
-@brief Information about this Module
+@brief Classes for securities and groups. It's imporatnt to know, this currently
+    CANNOT handle calculating gains with different buy/sell dates of the same security
 
 @author: aweis
 """
 
 from pyfolio.core import FolioDict
 from pyfolio.core.Ticker import Ticker
+from pyfolio.Taxes import get_gain_type
 
 from datetime import datetime,timedelta
 import numpy as np
-import os
+import os,re
 
 #%% Templates for default inputs
     
@@ -25,15 +27,16 @@ BASE_TEMPLATE = { # template for all things
     }
 
 SECURITY_TEMPLATE = {
-    'ticker':'',
+    'ticker':None,
     'value':1, # default value (e.g. cash)
     # these next two are used to calculate gains/losses and tax info
-    'purchase_date':datetime.now(),
+    'buy_date':datetime.now(),
     }
 SECURITY_TEMPLATE.update(BASE_TEMPLATE)
 
 SECURITY_GROUP_TEMPLATE = {
-    'children':[],
+    'children':{},
+    'gains': 0 # gains/losses from buys/sells in the group
     }
 SECURITY_GROUP_TEMPLATE.update(BASE_TEMPLATE)
 
@@ -69,6 +72,20 @@ class Security(FolioDict):
         ticker = self.get('ticker',None) # try and get tick
         if ticker is not None: self._ticker = Ticker(ticker)
         
+    def get_id(self):
+        '''@brief get an id label for the security'''
+        # first see if we have a ticker
+        if self['ticker'] is not None:
+            id = self['ticker']
+        elif self['name'] is not None:
+            id = self['name']
+        else:
+            raise Exception("Can't get ID. Neither 'ticker' or 'name' are defined.")
+        # now clean the id
+        id = id.lower() # make lowercase 
+        id = re.sub('[ ]+','_',id) # clean some characters
+        return id
+        
     def get_value(self,**kwargs):
         '''@brief return the current value of the security'''
         self._verify()
@@ -77,6 +94,24 @@ class Security(FolioDict):
         else: # otherwise use whatever self['value'] is set to
             tval = self['value']
         return tval*self['count']
+    
+    def get_cost_basis(self):
+        '''@brief get the cost basis of the security (total amount invested)'''
+        return self.get_value(self['buy_date'])
+    
+    def get_gains(self,**kwargs):
+        '''
+        @brief get the gain at current market price to date of purchase
+        @note this is currently naiively calculated as the current value - initial value
+        @todo add reinvested dividends and tax by year
+        '''
+        # calculate owned duration (for tax reasons)
+        now = datetime.now()
+        duration = now-self['buy_date']
+        gain_type = get_gain_type(duration)
+        change = self.get_value()-self.get_cost_basis() # current value - start 
+        return {'type':gain_type,'count':change}
+        
         
 
 #%% Inherit from security group to make accounts/portfolios
@@ -96,9 +131,11 @@ class SecurityGroup(FolioDict):
         
     def get_value(self,**kwargs):
         '''@brief get value of all securities'''
-        val = np.sum([c.get_value(**kwargs) for c in self['children']],axis=0)
+        val = np.sum([c.get_value(**kwargs) for c in self['children'].values()],axis=0)
         return val
         
+    
+#%% Some testing
 
 if __name__=='__main__':
     

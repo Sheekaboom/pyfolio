@@ -1,32 +1,32 @@
 
 {
- "name":"Alec's test portfolio",
- "children":[
-     {
-      "name":"Account 1",
-      "children":[
-          {"ticker":"VOO","count":10,"risk":75},
-          {"ticker":"ICVT","count":10,"risk":25},
-          {"name":"cash","count":10000.12,"risk":0}
-          ]
+ "name": "Alec's test portfolio",
+ "children": {
+     "account_1": {
+      "name": "Account 1",
+      "children": {
+          "voo":  {"ticker": "VOO","count": 10,"risk": 75,"buy_date": '2020-10-1 0:0:0'},
+          "icvt": {"ticker": "ICVT","count": 10,"risk": 25,"buy_date": '2019-1-1 0:0:0'},
+          "cash": {"name": "cash","count": 10000.12,"risk": 0}
+          }
       },
-     {
-      "name":"Account 2",
-      "tax_status":"exempt",
-      "children":[
-          {"ticker":"VOO","count":10,"risk":75},
-          {"ticker":"ICVT","count":10,"risk":25},
-          {"name":"cash","count":10000.12,"risk":0}
-          ]
+     "account_2": {
+      "name": "Account 2",
+      "tax_status": "exempt",
+      "children":{
+          "voo":  {"ticker": "VOO","count": 10,"risk": 75},
+          "icvt": {"ticker": "ICVT","count": 10,"risk": 25},
+          "cash": {"name": "cash","count": 10000.12,"risk": 0}
+          }
       },
-     {
-      "name":"Account 3",
-      "tax_status":"deferred",
-      "children":[
-          {"ticker":"VOO","count":10,"risk":75},
-          {"ticker":"ICVT","count":10,"risk":25},
-          {"name":"cash","count":10000.12,"risk":0}
-          ]
+     "account_3": {
+      "name": "Account 3",
+      "tax_status": "deferred",
+      "children": {
+          "voo":  {"ticker": "VOO","count": 10,"risk": 75},
+          "icvt": {"ticker": "ICVT","count": 10,"risk": 25},
+          "cash": {"name": "cash","count": 10000.12,"risk": 0}
+          }
       }
- ]
+ }
 }

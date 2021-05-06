@@ -7,6 +7,10 @@
 @author: aweis
 """
 
+from datetime import timedelta
+
+from pyfolio.core import FolioDict
+
 TAX_STATUS_ALIASES = {
     'regular':[None],
     'exempt':['roth'],
@@ -18,4 +22,9 @@ ACCOUNT_TYPE_ALIASES = {
     'ira':['retirement'],
     '401k':[]}
 
+def get_gain_type(hold_duration):
+    '''@brief get type of capital gain from a time duration'''
+    if hold_duration<timedelta(days=365):type='short'
+    else: type='long'
+    return type 
 
