@@ -61,10 +61,13 @@ class Ticker(yfinance.Ticker):
             date = [date]
         # now get the data
         values = []
-        for d in date:
-            idx = hist.index.get_loc(d,method='nearest')
-            hv = hist.iloc[idx]
-            values.append(hv['Close'])
+        try:
+            for d in date:
+                idx = hist.index.get_loc(d,method='nearest')
+                hv = hist.iloc[idx]
+                values.append(hv['Close'])
+        except KeyError:
+            raise Exception("It seems like there may be no data for {}...".format(self.ticker))
         if _date_isscalar: values = values[0]
         return values
     
