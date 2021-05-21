@@ -1,9 +1,11 @@
 README.md
 setup.py
 pyfolio/Accounts.py
+pyfolio/Distributions.py
 pyfolio/Portfolio.py
 pyfolio/__init__.py
 pyfolio/core.py
+pyfolio/visualization.py
 pyfolio.egg-info/PKG-INFO
 pyfolio.egg-info/SOURCES.txt
 pyfolio.egg-info/dependency_links.txt

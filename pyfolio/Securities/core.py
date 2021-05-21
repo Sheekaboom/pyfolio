@@ -89,9 +89,11 @@ class Security(FolioDict):
     def get_value(self,**kwargs):
         '''@brief return the current value of the security'''
         self._verify()
-        if self._ticker is not None: # if its a ticker
+        if self._ticker is not None: # if its a ticker then update
             tval = np.asarray(self._ticker.get_value(**kwargs))
-        else: # otherwise use whatever self['value'] is set to
+            if not kwargs: # if no kwargs were used set value (e.g. default to single value now)
+                self['value'] = tval# set to the latest value
+        else:
             tval = self['value']
         return tval*self['count']
     

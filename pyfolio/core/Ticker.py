@@ -68,7 +68,7 @@ class Ticker(yfinance.Ticker):
                 values.append(hv['Close'])
         except KeyError:
             raise Exception("It seems like there may be no data for {}...".format(self.ticker))
-        if _date_isscalar: values = values[0]
+        if _date_isscalar: values = float(values[0])
         return values
     
         

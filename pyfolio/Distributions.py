@@ -34,6 +34,32 @@ def unpack_securities(mydict,parent_percent=100):
             unpacked[k] = sec
             
     return unpacked
+
+def print_orders(orders):
+    '''@brief print out orders as instructions'''
+    if not isinstance(orders,list):
+        orders = [orders] # make sure its a list
+    # now print
+    order_fmt = '{buysell} {count} of {ticker} at {value}'
+    ostrings = [] # strings for orders
+    cost = 0
+    for order in orders:
+        order_info = {
+            'buysell': 'BUY ' if order['count']>0 else 'SELL',
+            'count'  : np.abs(order['count']),
+            'ticker' : order['ticker'],
+            'value'  : order['value']
+            }
+        ostrings.append(order_fmt.format(**order_info))
+        cost += order['value']*order['count'] # update total cost
+    print('--------------------------------')
+    print('---           ORDERS         ---')
+    print('--------------------------------')
+    print('\n'.join(ostrings))
+    print('--------------------------------')
+    print('---  Total = {:8.2f}  ---'.format(cost))   
+    print('--------------------------------')
+    return ostrings
             
 
 #%% Class to hold tihs
@@ -59,7 +85,7 @@ class Distribution(FolioDict):
         ## maximum allowed cash per security
         max_cash = {k:cash*v.get('percent',None) for k,v in non_count_vals.items()} 
         ## now calculate how many shares that is and make securities out of it
-        orders += [Security(**v,count=int(np.floor(max_cash[k]/values[k]))) for k,v in non_count_vals.items()]
+        orders += [Security(**v,value=values[k],count=int(np.floor(max_cash[k]/values[k]))) for k,v in non_count_vals.items()]
         # and return all orders
         return orders
     
@@ -72,12 +98,12 @@ class Distribution(FolioDict):
 if __name__=='__main__':
     
     mydist = Distribution({
-        'cash': {'name':'cash','count':10000},
+        #'cash': {'name':'cash','count':10000},
         'low_risk':{
             'percent': 0.25,
             'children':{
-                'vtip':{'ticker':'VTIP','percent':0.6,'description':'TIPS ETF'},
-                'bnd' :{'ticker':'BND','percent':0.4,'description':'Total bond ETF'}
+                'vtip':{'ticker':'VTIP','percent':0.4,'description':'TIPS ETF'},
+                'bnd' :{'ticker':'BND','percent':0.6,'description':'Total bond ETF'}
                     }
                 },
         'medium_risk':{
@@ -100,5 +126,6 @@ if __name__=='__main__':
             }
         })
     
-    orders = mydist.get_orders(100000)
+    orders = mydist.get_orders(15000)
+    print_orders(orders)
     
