@@ -8,6 +8,7 @@
 """
 
 from pyfolio.Securities.core import SecurityGroup,Security
+from pyfolio.Distributions import Distribution,print_orders
 
 class Account(SecurityGroup):
     '''@brief class to hold account info'''
@@ -40,6 +41,18 @@ class Account(SecurityGroup):
     
     def withdraw(self,count):
         self.deposit(-count)
+        
+    def balance(self,dist:Distribution,print_flg=True):
+        '''@take in a distribution and provide orders to rebalance the account'''
+        orders = dist.get_orders(0,owned = self['children'])
+        if print_flg:
+            print_orders(orders)
+        return orders
+    
+    def get_distribution(self):
+        '''@brief get account distribution as percentages'''
+        for k,v in self['children']:
+            pass
         
     def _add_gains(self,gains):
         '''@brief add a list of gains to our list. should AT LEAST have keys 'type' and 'count' '''

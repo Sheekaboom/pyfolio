@@ -13,7 +13,7 @@ import copy
 import numpy as np
 
 #%% some useful functions
-def unpack_securities(mydict,parent_percent=100):
+def unpack_securities(mydict,parent_percent=1):
     '''
     @brief unpack nested values and get list of securities with associated percentages
     @param[in] mydict - dictionary to unpack from
@@ -24,7 +24,7 @@ def unpack_securities(mydict,parent_percent=100):
         children = v.get('children',None) # try and get children
         
         if children is not None: # assume we have a nested dict
-            percent = v.get('percent',100) # if not specified assume child specifies
+            percent = v.get('percent',1) # if not specified assume child specifies
             unpacked.update(unpack_securities(children,percent))
             
         else: # otherwise assume its a security
@@ -34,6 +34,19 @@ def unpack_securities(mydict,parent_percent=100):
             unpacked[k] = sec
             
     return unpacked
+
+def normalize_percentages(secs,norm_val=1):
+    '''@brief normalize a dict of securities with percentages to norm_val'''
+    perc_tot = np.sum([v.get('percent',0) for v in secs.values()])
+    secs_out = {}
+    for k,v in secs.items():
+        # copy the security
+        sec_out = copy.deepcopy(v)
+        # adjust the percentage (if it has one)
+        if v.get('percent',None) is not None:
+            sec_out['percent'] = (v.get('percent')*norm_val)/perc_tot
+        secs_out[k] = sec_out
+    return secs_out
 
 def print_orders(orders):
     '''@brief print out orders as instructions'''
@@ -68,7 +81,7 @@ class Distribution(FolioDict):
     @brief class to specify a distribution of a portfolio
     @note all init args passed to folio dict
     '''
-    def get_orders(self,cash):
+    def get_orders(self,cash,owned:dict={}):
         '''@brief get buy orders for each security needed to hit provided distribution. given available cash'''
         orders = []
         # first lets make all of our values securities
@@ -81,11 +94,28 @@ class Distribution(FolioDict):
         # now lets calculate max cash per percent security
         ## First lets get the value of each security
         non_count_vals = {k:v for k,v in unpacked.items() if v.get('count',None) is None}
-        values = {k:Security(**v,count=1).get_value() for k,v in non_count_vals.items()}
+        value_needed_secs = copy.deepcopy(non_count_vals)
+        value_needed_secs.update(owned)
+        values = {}
+        for k,v in value_needed_secs.items():
+            vc = copy.deepcopy(dict(v))
+            vc.update({'count':1})
+            values[k] = Security(**vc).get_value()
         ## maximum allowed cash per security
-        max_cash = {k:cash*v.get('percent',None) for k,v in non_count_vals.items()} 
+        ### normalize percentages
+        non_count_vals = normalize_percentages(non_count_vals)
+        ### cost of owned securities
+        owned_cost = {k:values.get(k,np.nan)*v.get('count',0) for k,v in owned.items()}
+        ### Calculate the total capital we have
+        capital = cash+np.sum([c for c in owned_cost.values()])
+        ### now calculate capital allowed        
+        max_cost = {k:capital*v.get('percent',None) for k,v in non_count_vals.items()} 
+        # get how much of each secutiry to buy (remove already owned)
+        counts = {k:int(np.floor(max_cost[k]/values[k]))-owned.get(k,{}).get('count',0) for k in non_count_vals.keys()}
         ## now calculate how many shares that is and make securities out of it
-        orders += [Security(**v,value=values[k],count=int(np.floor(max_cash[k]/values[k]))) for k,v in non_count_vals.items()]
+        orders += [Security(**v,value=values[k],
+                            count=counts[k])
+                           for k,v in non_count_vals.items()]
         # and return all orders
         return orders
     
@@ -106,13 +136,14 @@ if __name__=='__main__':
                 'bnd' :{'ticker':'BND','percent':0.6,'description':'Total bond ETF'}
                     }
                 },
-        'medium_risk':{
+        'medium_risk':{ 
             'percent':0.15,
             'children':{
-                'eqi':{'ticker':'INDS','percent':0.30,'description':'industrial'},
-                'o'  :{'ticker':'O','percent':0.15,'description':'commercial real estate'},
+                'usrt':{'ticker':'USRT','percent':0.65,'description':'broad REIT diversification'},
+                #'eqi':{'ticker':'INDS','percent':0.30,'description':'industrial'},
+                #'o'  :{'ticker':'O','percent':0.15,'description':'commercial real estate'},
                 'old':{'ticker':'OLD','percent':0.35,'description':'long term care'},
-                'rez':{'ticker':'REZ','percent':0.10,'description':'residential real estate'}
+                #'rez':{'ticker':'REZ','percent':0.10,'description':'residential real estate'}
                     }
                 },
         'high_risk':{
@@ -126,6 +157,12 @@ if __name__=='__main__':
             }
         })
     
-    orders = mydist.get_orders(15000)
+    owned = {
+        'voo':{'count':5},
+        'vtip':{'count':162}
+        }
+    
+    orders = mydist.get_orders(85000,owned=owned)
+    ordersr = mydist.get_orders(52500)
     print_orders(orders)
     
